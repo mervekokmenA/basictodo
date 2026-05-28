@@ -1,13 +1,17 @@
 "use client";
 
-import { DailyStudy, DEFAULT_ROUTINES } from "@/lib/types";
+import { DailyStudy, Routine } from "@/lib/types";
+import { getRoutineStreak, isRoutineDoneRecently } from "@/lib/storage";
+import ChecklistItem from "@/components/ChecklistItem";
 
 interface Props {
   study: DailyStudy;
   onChange: (study: DailyStudy) => void;
+  routines: Routine[];
+  currentDate: string;
 }
 
-export default function GunlukRutinler({ study, onChange }: Props) {
+export default function GunlukRutinler({ study, onChange, routines, currentDate }: Props) {
   function toggle(routineId: string) {
     onChange({
       ...study,
@@ -18,57 +22,42 @@ export default function GunlukRutinler({ study, onChange }: Props) {
     });
   }
 
-  const doneCount = DEFAULT_ROUTINES.filter((r) => study.routinesDone[r.id]).length;
+  const doneCount = routines.filter((r) => study.routinesDone[r.id]).length;
 
   return (
     <div className="flex-1">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-black tracking-widest text-[#1a2a3a]">GÜNLÜK RUTİNLER</h3>
         <span className="text-xs font-semibold text-[#4a7fa5] bg-[#e8f2fa] px-2 py-1 rounded-full">
-          {doneCount}/{DEFAULT_ROUTINES.length}
+          {doneCount}/{routines.length}
         </span>
       </div>
 
       <div className="flex flex-col gap-2">
-        {DEFAULT_ROUTINES.map((routine, i) => {
+        {routines.map((routine, i) => {
           const done = !!study.routinesDone[routine.id];
+          const isThreeDayRoutine = routine.frequency === "3 günde 1";
+          const doneRecently = isThreeDayRoutine
+            ? isRoutineDoneRecently(routine.id, 3, currentDate)
+            : false;
+          const streak = getRoutineStreak(routine.id, currentDate);
+
           return (
-            <button
-              key={routine.id}
-              onClick={() => toggle(routine.id)}
-              className="flex items-start gap-3 text-left w-full"
-            >
-              <span
-                className={`w-5 h-5 rounded flex-shrink-0 border-2 mt-0.5 flex items-center justify-center transition-colors ${
-                  done ? "bg-[#4a7fa5] border-[#4a7fa5]" : "border-gray-300 bg-white"
-                }`}
-              >
-                {done && (
-                  <svg viewBox="0 0 16 16" fill="none" className="w-3 h-3">
-                    <path
-                      d="M3 8l3.5 3.5L13 5"
-                      stroke="white"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                )}
-              </span>
-              <div className="flex-1">
-                <span
-                  className={`text-sm leading-snug ${
-                    done ? "line-through text-gray-400" : "text-[#1a2a3a]"
-                  }`}
-                >
-                  <span className="font-bold text-xs text-[#4a7fa5] mr-1">{i + 1}.</span>
-                  {routine.text}
+            <div key={routine.id} className="relative">
+              {doneRecently && !done && (
+                <span className="block text-xs text-green-600 font-semibold mb-1 ml-8">
+                  ✓ Son 3 günde yapıldı
                 </span>
-                {routine.frequency && (
-                  <span className="block text-xs text-gray-400 mt-0.5">{routine.frequency}</span>
-                )}
-              </div>
-            </button>
+              )}
+              <ChecklistItem
+                checked={done}
+                onToggle={() => toggle(routine.id)}
+                label={`${i + 1}. ${routine.text}`}
+                sublabel={routine.frequency || undefined}
+                streak={streak > 1 ? streak : undefined}
+                dimmed={doneRecently && !done}
+              />
+            </div>
           );
         })}
       </div>
