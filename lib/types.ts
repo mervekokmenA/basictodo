@@ -15,6 +15,7 @@ export interface TodoItem {
   id: string;
   text: string;
   completed: boolean;
+  reminder?: string; // ISO datetime string
 }
 
 export interface DailyPlan {
