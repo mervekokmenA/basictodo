@@ -1,722 +1,634 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Günlük Planlayıcı</title>
 <style>
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
-  body { background: #f0f4f7; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1a2a3a; min-height: 100vh; }
+/* ─── RESET & THEME ──────────────────────────────────────────── */
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+:root {
+  --bg: #f0f4f7; --surface: #ffffff; --text: #1a2a3a; --muted: #6b8499;
+  --border: #e0eaf2; --header: #1a2a3a; --card-blue: #c8dde8;
+  --card-teal: #4bbfcc; --card-tan: #e8e4d8; --primary: #4a7fa5;
+}
+[data-theme="dark"] {
+  --bg: #0e1825; --surface: #162032; --text: #e2eaf2; --muted: #7a9ab5;
+  --border: #1e3048; --header: #0a1420; --card-blue: #1b3548;
+  --card-teal: #1a6070; --card-tan: #2a2820; --primary: #5a90b8;
+}
+html, body { height: 100%; overscroll-behavior: none; }
+body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
 
-  .header { background: #1a2a3a; color: white; padding: 40px 20px 16px; display: flex; align-items: center; justify-content: space-between; }
-  .header h1 { font-size: 18px; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; }
-  .header span { font-size: 11px; letter-spacing: 0.2em; color: rgba(255,255,255,0.5); text-transform: uppercase; }
+/* ─── LAYOUT ─────────────────────────────────────────────────── */
+.page { display: none; min-height: 100vh; padding-bottom: 70px; }
+.page.active { display: block; }
+.header { background: var(--header); color: white; padding: 44px 18px 14px; }
+.header h1 { font-size: 17px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.header .hrow { display: flex; justify-content: space-between; align-items: center; }
+.header .sub { font-size: 10px; color: rgba(255,255,255,.45); letter-spacing: .18em; text-transform: uppercase; }
+.content { padding: 14px; }
 
-  .date-nav { background: rgba(255,255,255,0.9); backdrop-filter: blur(8px); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e8eef3; position: sticky; top: 0; z-index: 10; }
-  .date-nav button.nav-arr { width: 36px; height: 36px; border-radius: 50%; border: none; background: #e8f2fa; color: #4a7fa5; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-  .date-nav button.nav-arr:active { background: #4a7fa5; color: white; }
-  .date-center { text-align: center; cursor: pointer; }
-  .date-center .date-main { font-size: 14px; font-weight: 700; color: #1a2a3a; }
-  .date-center .date-sub { font-size: 11px; color: #4a7fa5; font-weight: 600; }
+/* ─── DATE NAV ───────────────────────────────────────────────── */
+.date-nav { background: var(--surface); display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 20; }
+.date-nav .arr { width: 34px; height: 34px; border-radius: 50%; border: none; background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.date-nav .arr:active { background: var(--primary); color: #fff; }
+.date-center { text-align: center; cursor: pointer; }
+.date-center .dm { font-size: 14px; font-weight: 700; color: var(--text); }
+.date-center .ds { font-size: 11px; color: var(--primary); font-weight: 600; }
 
-  .content { padding: 16px; padding-bottom: 90px; }
+/* ─── SAAT PLANI ─────────────────────────────────────────────── */
+.card-blue { background: var(--card-blue); border-radius: 18px; padding: 14px; margin-bottom: 14px; }
+.card-title { font-size: 12px; font-weight: 900; letter-spacing: .2em; text-align: center; color: var(--text); margin-bottom: 10px; text-transform: uppercase; }
+.time-table { background: rgba(255,255,255,.35); border-radius: 12px; overflow: hidden; }
+.time-row { display: grid; grid-template-columns: 110px 1fr 26px; border-bottom: 1px solid rgba(0,0,0,.1); min-height: 42px; }
+.time-row:last-child { border-bottom: none; }
+.tc { padding: 7px 8px; font-weight: 700; font-size: 11px; color: var(--text); border-right: 1px solid rgba(0,0,0,.1); background: rgba(255,255,255,.25); display: flex; align-items: center; cursor: pointer; }
+.tc:active { background: rgba(255,255,255,.5); }
+.dc { padding: 7px 8px; display: flex; flex-direction: column; gap: 3px; cursor: pointer; min-height: 42px; }
+.hint { color: rgba(0,0,0,.35); font-size: 11px; font-style: italic; align-self: center; }
+.task-tag { display: flex; align-items: center; gap: 4px; }
+.tdot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.tlab { font-size: 11px; font-weight: 600; color: var(--text); text-transform: uppercase; line-height: 1.2; }
+.xc { display: flex; align-items: center; justify-content: center; cursor: pointer; color: rgba(0,0,0,.25); font-size: 17px; }
+.xc:active { color: #e74c3c; }
+.add-slot { margin-top: 10px; width: 100%; padding: 9px; border-radius: 12px; border: 2px dashed var(--primary); background: transparent; color: var(--primary); font-size: 12px; font-weight: 700; cursor: pointer; }
 
-  /* SAAT PLANI */
-  .card-blue { background: #c8dde8; border-radius: 18px; padding: 16px; margin-bottom: 14px; }
-  .card-title { font-size: 13px; font-weight: 900; letter-spacing: 0.18em; text-align: center; color: #1a2a3a; margin-bottom: 12px; text-transform: uppercase; }
-  .time-table { background: rgba(255,255,255,0.4); border-radius: 12px; overflow: hidden; }
-  .time-row { display: grid; grid-template-columns: 108px 1fr 28px; border-bottom: 1px solid #9bb8ca; min-height: 44px; }
-  .time-row:last-child { border-bottom: none; }
-  .time-cell { padding: 8px; font-weight: 700; font-size: 11px; color: #1a2a3a; border-right: 1px solid #9bb8ca; background: rgba(255,255,255,0.3); display: flex; align-items: center; cursor: pointer; }
-  .time-cell:active { background: rgba(255,255,255,0.6); }
-  .tasks-cell { padding: 8px; display: flex; flex-direction: column; gap: 4px; cursor: pointer; min-height: 44px; }
-  .tasks-cell .empty-hint { color: #7a9ab0; font-size: 11px; font-style: italic; align-self: center; }
-  .task-tag { display: flex; align-items: center; gap: 5px; }
-  .task-dot { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
-  .task-label { font-size: 11px; font-weight: 600; color: #1a2a3a; text-transform: uppercase; line-height: 1.2; }
-  .del-cell { display: flex; align-items: center; justify-content: center; cursor: pointer; color: #9bb8ca; font-size: 18px; }
-  .del-cell:active { color: #e74c3c; }
-  .add-slot-btn { margin-top: 12px; width: 100%; padding: 10px; border-radius: 12px; border: 2px dashed #4a7fa5; background: transparent; color: #4a7fa5; font-size: 13px; font-weight: 700; cursor: pointer; }
-  .add-slot-btn:active { background: rgba(74,127,165,0.08); }
+/* ─── TODOS ──────────────────────────────────────────────────── */
+.card-teal { background: var(--card-teal); border-radius: 18px; padding: 14px; margin-bottom: 14px; }
+.card-title-w { font-size: 12px; font-weight: 900; letter-spacing: .2em; text-align: center; color: #fff; margin-bottom: 10px; text-transform: uppercase; }
+.todo-list { display: flex; flex-direction: column; gap: 9px; margin-bottom: 10px; }
+.todo-wrap { display: flex; flex-direction: column; gap: 2px; }
+.todo-row { display: flex; align-items: center; gap: 8px; }
+.tcheck { width: 20px; height: 20px; border-radius: 4px; border: 2px solid #fff; background: transparent; flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.tcheck.done { background: #fff; }
+.tcheck.done::after { content: "✓"; color: var(--card-teal); font-size: 13px; font-weight: 900; }
+.ttxt { flex: 1; font-size: 13px; color: #fff; cursor: pointer; }
+.ttxt.done { text-decoration: line-through; opacity: .55; }
+.bell { width: 27px; height: 27px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.bell.off { background: rgba(255,255,255,.2); }
+.bell.on { background: #fde047; }
+.bell svg { width: 13px; height: 13px; }
+.tdel { color: rgba(255,255,255,.5); font-size: 17px; cursor: pointer; background: none; border: none; line-height: 1; }
+.rembadge { margin-left: 28px; font-size: 11px; color: #fef9c3; display: flex; align-items: center; gap: 3px; }
+.add-todo { display: flex; gap: 8px; }
+.add-todo input { flex: 1; padding: 9px 12px; border-radius: 11px; border: 1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.22); color: #fff; font-size: 13px; outline: none; }
+.add-todo input::placeholder { color: rgba(255,255,255,.55); }
+.add-todo input:focus { border-color: rgba(255,255,255,.8); }
+.add-todo button { padding: 9px 14px; border-radius: 11px; border: none; background: #fff; color: var(--card-teal); font-weight: 700; font-size: 13px; cursor: pointer; }
 
-  /* YAPILACAKLAR */
-  .card-teal { background: #4bbfcc; border-radius: 18px; padding: 16px; margin-bottom: 14px; }
-  .card-title-white { font-size: 13px; font-weight: 900; letter-spacing: 0.18em; text-align: center; color: white; margin-bottom: 12px; text-transform: uppercase; }
-  .todo-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
-  .todo-item-wrap { display: flex; flex-direction: column; gap: 3px; }
-  .todo-item { display: flex; align-items: center; gap: 8px; }
-  .todo-check { width: 20px; height: 20px; border-radius: 4px; border: 2px solid white; background: transparent; flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-  .todo-check.done { background: white; }
-  .todo-check.done::after { content: "✓"; color: #4bbfcc; font-size: 13px; font-weight: 900; }
-  .todo-text { flex: 1; font-size: 13px; font-weight: 500; color: white; cursor: pointer; }
-  .todo-text.done { text-decoration: line-through; opacity: 0.6; }
-  .bell-btn { width: 28px; height: 28px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.15s; }
-  .bell-btn.off { background: rgba(255,255,255,0.2); }
-  .bell-btn.on  { background: #fde047; }
-  .bell-btn svg { width: 14px; height: 14px; }
-  .todo-del { color: rgba(255,255,255,0.6); font-size: 16px; cursor: pointer; background: none; border: none; line-height: 1; }
-  .todo-del:active { color: white; }
-  .reminder-badge { margin-left: 28px; font-size: 11px; color: #fef9c3; display: flex; align-items: center; gap: 4px; }
-  .reminder-badge svg { width: 11px; height: 11px; flex-shrink: 0; }
-  .add-todo { display: flex; gap: 8px; }
-  .add-todo input { flex: 1; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.4); background: rgba(255,255,255,0.25); color: white; font-size: 13px; outline: none; }
-  .add-todo input::placeholder { color: rgba(255,255,255,0.6); }
-  .add-todo input:focus { border-color: white; }
-  .add-todo button { padding: 10px 16px; border-radius: 12px; border: none; background: white; color: #4bbfcc; font-weight: 700; font-size: 13px; cursor: pointer; }
+/* ─── RUTINLER ───────────────────────────────────────────────── */
+.progress-bar { height: 7px; background: var(--border); border-radius: 10px; overflow: hidden; margin: 10px 14px; }
+.progress-fill { height: 100%; background: var(--primary); border-radius: 10px; transition: width .3s; }
+.progress-label { text-align: center; font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+.routine-list { padding: 0 14px; display: flex; flex-direction: column; gap: 6px; }
+.ritem { display: flex; flex-direction: column; gap: 2px; }
+.ritem-row { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; padding: 8px 12px; background: var(--surface); border-radius: 12px; border: 1px solid var(--border); }
+.ritem-row.dimmed { opacity: .5; }
+.rcheck { width: 20px; height: 20px; border-radius: 5px; border: 2px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 1px; transition: all .15s; }
+.rcheck.done { background: var(--primary); border-color: var(--primary); }
+.rcheck.done::after { content: "✓"; color: #fff; font-size: 12px; font-weight: 900; }
+.rtext-wrap { flex: 1; }
+.rtext { font-size: 13px; color: var(--text); line-height: 1.35; }
+.rtext.done { text-decoration: line-through; color: var(--muted); }
+.rfreq { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.streak-badge { background: #fef08a; color: #713f12; font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 20px; flex-shrink: 0; }
+.done3-msg { font-size: 11px; color: #16a34a; font-weight: 600; padding-left: 42px; }
 
-  /* BOTTOM NAV */
-  .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #e8eef3; display: flex; box-shadow: 0 -2px 12px rgba(0,0,0,0.06); z-index: 100; }
-  .nav-tab { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 10px 0 8px; cursor: pointer; border: none; background: none; font-size: 10px; font-weight: 600; color: #b0bec5; gap: 3px; transition: color 0.15s; }
-  .nav-tab.active { color: #4a7fa5; }
-  .nav-tab svg { width: 22px; height: 22px; }
+/* ─── ÇALIŞMALAR ─────────────────────────────────────────────── */
+.cat-card { background: var(--card-tan); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; }
+.cat-label { font-size: 11px; font-weight: 900; letter-spacing: .15em; color: var(--text); margin-bottom: 8px; text-transform: uppercase; }
+.cat-opts { display: flex; flex-wrap: wrap; gap: 7px; }
+.copt { padding: 6px 12px; border-radius: 10px; border: 1px solid rgba(74,127,165,.3); background: var(--surface); color: var(--primary); font-size: 11px; font-weight: 700; cursor: pointer; transition: all .15s; }
+.copt.sel { background: var(--primary); color: #fff; border-color: var(--primary); }
+.copt:active { transform: scale(.96); }
+.notes-card { background: var(--surface); border-radius: 16px; padding: 14px; border: 1px solid var(--border); margin-top: 8px; }
+.notes-title { font-size: 11px; font-weight: 900; letter-spacing: .15em; color: var(--text); text-align: center; margin-bottom: 10px; }
+.notes-card textarea { width: 100%; min-height: 130px; border: none; outline: none; resize: none; font-size: 13px; color: var(--text); line-height: 1.6; background: transparent; }
+.notes-card textarea::placeholder { color: var(--muted); }
 
-  .page { display: none; }
-  .page.active { display: block; }
+/* ─── AYARLAR ────────────────────────────────────────────────── */
+.settings-section { background: var(--surface); border-radius: 16px; padding: 14px; margin-bottom: 12px; border: 1px solid var(--border); }
+.sec-title { font-size: 12px; font-weight: 900; letter-spacing: .15em; text-transform: uppercase; color: var(--text); margin-bottom: 12px; }
+.theme-btns { display: flex; gap: 8px; }
+.tbtn { flex: 1; padding: 10px; border-radius: 12px; border: 2px solid var(--border); background: transparent; color: var(--muted); font-size: 13px; font-weight: 700; cursor: pointer; }
+.tbtn.active { border-color: var(--primary); color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, transparent); }
+.set-list { display: flex; flex-direction: column; gap: 7px; }
+.set-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg); border-radius: 10px; }
+.set-item-label { flex: 1; font-size: 13px; color: var(--text); }
+.set-item-sub { font-size: 11px; color: var(--muted); }
+.del-btn { width: 28px; height: 28px; border-radius: 8px; border: none; background: #fee2e2; color: #dc2626; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.del-btn:active { background: #dc2626; color: #fff; }
+.add-row { display: flex; gap: 7px; margin-top: 10px; }
+.add-row input { flex: 1; padding: 9px 12px; border-radius: 11px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 13px; outline: none; }
+.add-row input:focus { border-color: var(--primary); }
+.add-row button { padding: 9px 14px; border-radius: 11px; border: none; background: var(--primary); color: #fff; font-weight: 700; font-size: 13px; cursor: pointer; }
+.time-add-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 7px; margin-top: 10px; }
+.time-add-row input[type=time] { padding: 9px 10px; border-radius: 11px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 13px; outline: none; }
+.time-add-row input:focus { border-color: var(--primary); }
 
-  /* ÇALIŞMALAR */
-  .cat-card { background: #e8e4d8; border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; }
-  .cat-label { font-size: 11px; font-weight: 900; letter-spacing: 0.15em; color: #1a2a3a; margin-bottom: 8px; text-transform: uppercase; }
-  .cat-options { display: flex; flex-wrap: wrap; gap: 7px; }
-  .cat-opt { padding: 6px 12px; border-radius: 10px; border: 1px solid rgba(74,127,165,0.3); background: white; color: #4a7fa5; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s; letter-spacing: 0.05em; }
-  .cat-opt.selected { background: #4a7fa5; color: white; border-color: #4a7fa5; }
-  .cat-opt:active { transform: scale(0.96); }
-  .bottom-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-  .notes-card { background: white; border-radius: 16px; padding: 14px; border: 1px solid #e8eef3; }
-  .notes-title { font-size: 10px; font-weight: 900; letter-spacing: 0.15em; color: #1a2a3a; text-align: center; margin-bottom: 10px; }
-  .dots-col { display: flex; flex-direction: column; gap: 5px; align-items: center; margin-bottom: 8px; }
-  .dot { width: 7px; height: 7px; border-radius: 50%; background: #ddd; }
-  .notes-card textarea { width: 100%; height: 160px; border: none; outline: none; resize: none; font-size: 12px; color: #333; line-height: 1.6; font-family: inherit; background: transparent; }
-  .notes-card textarea::placeholder { color: #ccc; }
-  .routines-card { background: white; border-radius: 16px; padding: 14px; border: 1px solid #e8eef3; overflow-y: auto; max-height: 380px; }
-  .routines-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-  .routines-title { font-size: 10px; font-weight: 900; letter-spacing: 0.12em; color: #1a2a3a; text-transform: uppercase; }
-  .routines-badge { font-size: 11px; font-weight: 700; color: #4a7fa5; background: #e8f2fa; padding: 2px 8px; border-radius: 20px; }
-  .routine-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; cursor: pointer; }
-  .routine-check { width: 18px; height: 18px; border-radius: 4px; border: 2px solid #ddd; flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 1px; transition: all 0.15s; }
-  .routine-check.done { background: #4a7fa5; border-color: #4a7fa5; }
-  .routine-check.done::after { content: "✓"; color: white; font-size: 11px; font-weight: 900; }
-  .routine-text { font-size: 11px; color: #1a2a3a; line-height: 1.4; }
-  .routine-text.done { text-decoration: line-through; color: #aaa; }
-  .routine-num { font-size: 10px; font-weight: 900; color: #4a7fa5; }
-  .routine-freq { display: block; font-size: 10px; color: #aaa; margin-top: 1px; }
+/* ─── BOTTOM NAV ─────────────────────────────────────────────── */
+.bnav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); display: grid; grid-template-columns: repeat(4, 1fr); box-shadow: 0 -2px 12px rgba(0,0,0,.07); z-index: 100; }
+.ntab { display: flex; flex-direction: column; align-items: center; padding: 8px 0 6px; cursor: pointer; border: none; background: none; font-size: 10px; font-weight: 600; color: var(--muted); gap: 3px; transition: color .15s; }
+.ntab.active { color: var(--primary); }
+.ntab svg { width: 21px; height: 21px; }
 
-  /* MODALS */
-  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; align-items: flex-end; }
-  .modal-overlay.open { display: flex; }
-  .modal { background: white; width: 100%; border-radius: 24px 24px 0 0; padding: 20px; box-shadow: 0 -4px 24px rgba(0,0,0,0.15); }
-  .modal h3 { font-size: 15px; font-weight: 800; color: #1a2a3a; margin-bottom: 4px; }
-  .modal .modal-sub { font-size: 12px; color: #aaa; margin-bottom: 16px; }
-  .modal input[type="text"], .modal input[type="time"], .modal input[type="datetime-local"] { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid #e0e8f0; background: #f7fafc; font-size: 14px; font-family: inherit; outline: none; margin-bottom: 14px; }
-  .modal input:focus { border-color: #4a7fa5; }
-  .color-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
-  .color-swatch { width: 34px; height: 34px; border-radius: 10px; cursor: pointer; transition: transform 0.15s; }
-  .color-swatch.selected { transform: scale(1.2); box-shadow: 0 0 0 3px white, 0 0 0 5px currentColor; }
-  .modal-label { font-size: 11px; font-weight: 700; color: #999; letter-spacing: 0.12em; margin-bottom: 8px; }
-  .modal-btns { display: flex; gap: 10px; }
-  .btn { flex: 1; padding: 13px; border-radius: 14px; border: none; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
-  .btn-cancel { background: #f0f4f7; color: #666; }
-  .btn-save { background: #4a7fa5; color: white; }
-  .btn-save-teal { background: #4bbfcc; color: white; }
-  .btn-danger { background: #fef2f2; color: #e74c3c; }
-  .btn:active { opacity: 0.85; }
-  .time-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+/* ─── MODALS ─────────────────────────────────────────────────── */
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200; align-items: flex-end; }
+.overlay.open { display: flex; }
+.modal { background: var(--surface); width: 100%; border-radius: 22px 22px 0 0; padding: 20px; max-height: 90vh; overflow-y: auto; }
+.modal h3 { font-size: 15px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+.modal .msub { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+.modal input[type=text], .modal input[type=time], .modal input[type=datetime-local] { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 14px; font-family: inherit; outline: none; margin-bottom: 12px; }
+.modal input:focus { border-color: var(--primary); }
+.mlabel { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .1em; margin-bottom: 7px; }
+.mbtns { display: flex; gap: 9px; margin-top: 4px; }
+.mbtn { flex: 1; padding: 13px; border-radius: 14px; border: none; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.mbtn-cancel { background: var(--bg); color: var(--muted); }
+.mbtn-save { background: var(--primary); color: #fff; }
+.mbtn-teal { background: var(--card-teal); color: #fff; }
+.mbtn-red { background: #fee2e2; color: #dc2626; }
+.mbtn:active { opacity: .85; }
+.color-row { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 14px; }
+.cswatch { width: 32px; height: 32px; border-radius: 10px; cursor: pointer; transition: transform .15s; }
+.cswatch.sel { transform: scale(1.22); box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px currentColor; }
+.tpair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
 
-  /* NOTIF TOAST */
-  .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #1a2a3a; color: white; padding: 12px 20px; border-radius: 14px; font-size: 13px; font-weight: 600; z-index: 999; display: none; max-width: 90%; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
-  .toast.show { display: block; animation: slideDown 0.3s ease; }
-  @keyframes slideDown { from { opacity:0; transform: translateX(-50%) translateY(-10px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
+/* ─── TOAST ──────────────────────────────────────────────────── */
+.toast { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); background: #1a2a3a; color: #fff; padding: 10px 18px; border-radius: 14px; font-size: 13px; font-weight: 600; z-index: 999; display: none; max-width: 90%; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,.3); }
+.toast.show { display: block; animation: td .25s ease; }
+@keyframes td { from { opacity: 0; transform: translateX(-50%) translateY(-8px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
 </style>
 </head>
 <body>
-
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
 
-<!-- PAGE: GÜNLÜK PLAN -->
-<div id="page-plan" class="page active">
-  <div class="header">
-    <span>TARİH</span>
-    <h1>Günlük Plan</h1>
-  </div>
+<!-- ═══ PAGE: DASHBOARD ════════════════════════════════════════ -->
+<div id="page-dash" class="page active">
+  <div class="header"><div class="hrow"><span class="sub">TARİH</span><h1>Günlük Plan</h1></div></div>
   <div class="date-nav">
-    <button class="nav-arr" onclick="changeDate(-1)">&#8249;</button>
-    <div class="date-center" onclick="goToday()">
-      <div class="date-main" id="display-date"></div>
-      <div class="date-sub" id="date-sub">Bugün</div>
-    </div>
-    <button class="nav-arr" onclick="changeDate(1)">&#8250;</button>
+    <button class="arr" onclick="cd(-1)">‹</button>
+    <div class="date-center" onclick="goToday()"><div class="dm" id="dn1"></div><div class="ds" id="ds1">Bugün</div></div>
+    <button class="arr" onclick="cd(1)">›</button>
   </div>
   <div class="content">
     <div class="card-blue">
       <div class="card-title">GÜNLÜK SAAT PLANI</div>
-      <div class="time-table" id="time-table"></div>
-      <button class="add-slot-btn" onclick="openAddSlot()">+ Saat Dilimi Ekle</button>
+      <div class="time-table" id="tt"></div>
+      <button class="add-slot" onclick="openModal('addslot-m')">+ Saat Dilimi Ekle</button>
     </div>
     <div class="card-teal">
-      <div class="card-title-white">YAPILACAKLAR LİSTESİ</div>
-      <div class="todo-list" id="todo-list"></div>
+      <div class="card-title-w">YAPILACAKLAR LİSTESİ</div>
+      <div class="todo-list" id="tl"></div>
       <div class="add-todo">
-        <input type="text" id="todo-input" placeholder="Yeni görev ekle..." onkeydown="if(event.key==='Enter')addTodo()">
+        <input type="text" id="ti" placeholder="Yeni görev..." onkeydown="if(event.key==='Enter')addTodo()">
         <button onclick="addTodo()">Ekle</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- PAGE: ÇALIŞMALAR -->
-<div id="page-calisma" class="page">
-  <div class="header">
-    <h1>Çalışmalar–Hobiler</h1>
-    <span>TARİH</span>
-  </div>
+<!-- ═══ PAGE: RUTİNLER ════════════════════════════════════════ -->
+<div id="page-rut" class="page">
+  <div class="header"><div class="hrow"><h1>Günlük Rutinler</h1><span class="sub" id="rut-count">0/13</span></div></div>
   <div class="date-nav">
-    <button class="nav-arr" onclick="changeDate(-1)">&#8249;</button>
-    <div class="date-center" onclick="goToday()">
-      <div class="date-main" id="display-date2"></div>
-      <div class="date-sub" id="date-sub2">Bugün</div>
-    </div>
-    <button class="nav-arr" onclick="changeDate(1)">&#8250;</button>
+    <button class="arr" onclick="cd(-1)">‹</button>
+    <div class="date-center" onclick="goToday()"><div class="dm" id="dn2"></div><div class="ds" id="ds2">Bugün</div></div>
+    <button class="arr" onclick="cd(1)">›</button>
   </div>
+  <div class="progress-label" id="prog-label">0 / 13 tamamlandı</div>
+  <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+  <div class="routine-list" id="rl"></div>
+</div>
+
+<!-- ═══ PAGE: ÇALIŞMALAR ═══════════════════════════════════════ -->
+<div id="page-cal" class="page">
+  <div class="header"><div class="hrow"><h1>Çalışmalar–Hobiler</h1><span class="sub">TARİH</span></div></div>
+  <div class="date-nav">
+    <button class="arr" onclick="cd(-1)">‹</button>
+    <div class="date-center" onclick="goToday()"><div class="dm" id="dn3"></div><div class="ds" id="ds3">Bugün</div></div>
+    <button class="arr" onclick="cd(1)">›</button>
+  </div>
+  <div class="content" id="cal-content"></div>
+</div>
+
+<!-- ═══ PAGE: AYARLAR ════════════════════════════════════════ -->
+<div id="page-set" class="page">
+  <div class="header"><div class="hrow"><h1>Ayarlar</h1></div></div>
   <div class="content">
-    <div class="cat-card">
-      <div class="cat-label">HOBİ: <span style="font-weight:400;font-size:10px;color:#888">(en fazla 2)</span></div>
-      <div class="cat-options" id="cat-hobi"></div>
-    </div>
-    <div class="cat-card">
-      <div class="cat-label">YAZI:</div>
-      <div class="cat-options" id="cat-yazi"></div>
-    </div>
-    <div class="cat-card">
-      <div class="cat-label">YABANCI DİL:</div>
-      <div class="cat-options" id="cat-dil"></div>
-    </div>
-    <div class="cat-card">
-      <div class="cat-label">GELİŞİM:</div>
-      <div class="cat-options" id="cat-gelisim"></div>
-    </div>
-    <div class="bottom-row">
-      <div class="notes-card">
-        <div class="notes-title">DÜŞÜNCE / NOT GÜNLÜĞÜ</div>
-        <div class="dots-col"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-        <textarea id="notes-area" placeholder="Düşüncelerini yaz..." oninput="saveNotes()"></textarea>
+    <!-- Tema -->
+    <div class="settings-section">
+      <div class="sec-title">Tema</div>
+      <div class="theme-btns">
+        <button class="tbtn active" id="tbtn-light" onclick="setTheme('light')">☀️ Açık</button>
+        <button class="tbtn" id="tbtn-dark" onclick="setTheme('dark')">🌙 Koyu</button>
       </div>
-      <div class="routines-card">
-        <div class="routines-header">
-          <div class="routines-title">GÜNLÜK<br>RUTİNLER</div>
-          <div class="routines-badge" id="routine-badge">0/13</div>
-        </div>
-        <div id="routines-list"></div>
+    </div>
+    <!-- Saat Aralıkları -->
+    <div class="settings-section">
+      <div class="sec-title">Saat Aralıkları</div>
+      <div class="set-list" id="set-slots"></div>
+      <div class="time-add-row">
+        <input type="time" id="ns-start" placeholder="Başlangıç">
+        <input type="time" id="ns-end" placeholder="Bitiş">
+        <button onclick="addSettingSlot()" style="padding:9px 14px;border-radius:11px;border:none;background:var(--primary);color:#fff;font-weight:700;font-size:13px;cursor:pointer">Ekle</button>
+      </div>
+    </div>
+    <!-- Kategoriler -->
+    <div class="settings-section">
+      <div class="sec-title">Kategoriler</div>
+      <div id="set-cats"></div>
+    </div>
+    <!-- Rutinler -->
+    <div class="settings-section">
+      <div class="sec-title">Rutinler</div>
+      <div class="set-list" id="set-ruts"></div>
+      <div class="add-row" style="margin-top:10px">
+        <input type="text" id="nr-text" placeholder="Rutin adı...">
+        <input type="text" id="nr-freq" placeholder="Sıklık..." style="max-width:90px">
+        <button onclick="addSettingRoutine()">Ekle</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- BOTTOM NAV -->
-<nav class="bottom-nav">
-  <button class="nav-tab active" id="tab-plan" onclick="switchTab('plan')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-    Günlük Plan
+<!-- ═══ BOTTOM NAV ════════════════════════════════════════════ -->
+<nav class="bnav">
+  <button class="ntab active" id="ntab-dash" onclick="switchTab('dash')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Plan
   </button>
-  <button class="nav-tab" id="tab-calisma" onclick="switchTab('calisma')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-    Çalışmalar
+  <button class="ntab" id="ntab-rut" onclick="switchTab('rut')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Rutinler
+  </button>
+  <button class="ntab" id="ntab-cal" onclick="switchTab('cal')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>Çalışmalar
+  </button>
+  <button class="ntab" id="ntab-set" onclick="switchTab('set')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Ayarlar
   </button>
 </nav>
 
-<!-- MODAL: TASK -->
-<div class="modal-overlay" id="task-modal">
+<!-- ═══ MODALS ════════════════════════════════════════════════ -->
+<div class="overlay" id="task-m">
   <div class="modal">
-    <h3 id="task-modal-title">Görev Ekle</h3>
-    <div class="modal-sub"></div>
-    <input type="text" id="task-input" placeholder="Görev adı..." onkeydown="if(event.key==='Enter')saveTask()">
-    <div class="modal-label">RENK</div>
-    <div class="color-row" id="color-row"></div>
-    <div class="modal-btns">
-      <button class="btn btn-danger" id="task-del-btn" onclick="deleteTask()" style="display:none">Sil</button>
-      <button class="btn btn-cancel" onclick="closeModal('task-modal')">İptal</button>
-      <button class="btn btn-save" onclick="saveTask()">Kaydet</button>
+    <h3 id="tm-title">Görev Ekle</h3><div class="msub"></div>
+    <input type="text" id="tm-inp" placeholder="Görev adı..." onkeydown="if(event.key==='Enter')saveTask()">
+    <div class="mlabel">RENK</div>
+    <div class="color-row" id="cr"></div>
+    <div class="mbtns">
+      <button class="mbtn mbtn-red" id="tm-del" onclick="deleteTask()" style="display:none">Sil</button>
+      <button class="mbtn mbtn-cancel" onclick="closeModal('task-m')">İptal</button>
+      <button class="mbtn mbtn-save" onclick="saveTask()">Kaydet</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL: SLOT EDIT -->
-<div class="modal-overlay" id="slot-modal">
+<div class="overlay" id="slot-m">
   <div class="modal">
-    <h3>Saati Düzenle</h3>
-    <div class="modal-sub"></div>
-    <div class="time-pair">
-      <div><div class="modal-label">BAŞLANGIÇ</div><input type="time" id="slot-start"></div>
-      <div><div class="modal-label">BİTİŞ</div><input type="time" id="slot-end"></div>
+    <h3>Saati Düzenle</h3><div class="msub"></div>
+    <div class="tpair">
+      <div><div class="mlabel">BAŞLANGIÇ</div><input type="time" id="sm-s"></div>
+      <div><div class="mlabel">BİTİŞ</div><input type="time" id="sm-e"></div>
     </div>
-    <div class="modal-btns">
-      <button class="btn btn-cancel" onclick="closeModal('slot-modal')">İptal</button>
-      <button class="btn btn-save" onclick="saveSlot()">Kaydet</button>
+    <div class="mbtns">
+      <button class="mbtn mbtn-cancel" onclick="closeModal('slot-m')">İptal</button>
+      <button class="mbtn mbtn-save" onclick="saveSlot()">Kaydet</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL: ADD SLOT -->
-<div class="modal-overlay" id="addslot-modal">
+<div class="overlay" id="addslot-m">
   <div class="modal">
-    <h3>Saat Dilimi Ekle</h3>
-    <div class="modal-sub"></div>
-    <div class="time-pair">
-      <div><div class="modal-label">BAŞLANGIÇ</div><input type="time" id="newslot-start"></div>
-      <div><div class="modal-label">BİTİŞ</div><input type="time" id="newslot-end"></div>
+    <h3>Saat Dilimi Ekle</h3><div class="msub"></div>
+    <div class="tpair">
+      <div><div class="mlabel">BAŞLANGIÇ</div><input type="time" id="as-s"></div>
+      <div><div class="mlabel">BİTİŞ</div><input type="time" id="as-e"></div>
     </div>
-    <div class="modal-btns">
-      <button class="btn btn-cancel" onclick="closeModal('addslot-modal')">İptal</button>
-      <button class="btn btn-save" onclick="confirmAddSlot()">Ekle</button>
+    <div class="mbtns">
+      <button class="mbtn mbtn-cancel" onclick="closeModal('addslot-m')">İptal</button>
+      <button class="mbtn mbtn-save" onclick="confirmAddSlot()">Ekle</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL: TODO EDIT -->
-<div class="modal-overlay" id="todo-edit-modal">
+<div class="overlay" id="todo-edit-m">
   <div class="modal">
-    <h3>Görevi Düzenle</h3>
-    <div class="modal-sub"></div>
-    <input type="text" id="todo-edit-input" placeholder="Görev adı..." onkeydown="if(event.key==='Enter')saveTodoEdit()">
-    <div class="modal-btns">
-      <button class="btn btn-cancel" onclick="closeModal('todo-edit-modal')">İptal</button>
-      <button class="btn btn-save-teal" onclick="saveTodoEdit()">Kaydet</button>
+    <h3>Görevi Düzenle</h3><div class="msub"></div>
+    <input type="text" id="te-inp" placeholder="Görev adı..." onkeydown="if(event.key==='Enter')saveTodoEdit()">
+    <div class="mbtns">
+      <button class="mbtn mbtn-cancel" onclick="closeModal('todo-edit-m')">İptal</button>
+      <button class="mbtn mbtn-teal" onclick="saveTodoEdit()">Kaydet</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL: REMINDER -->
-<div class="modal-overlay" id="reminder-modal">
+<div class="overlay" id="rem-m">
   <div class="modal">
-    <h3>🔔 Hatırlatıcı Ekle</h3>
-    <div class="modal-sub" id="reminder-modal-sub">Seçilen tarih ve saatte bildirim alırsın</div>
-    <div class="modal-label">TARİH VE SAAT</div>
-    <input type="datetime-local" id="reminder-dt">
-    <div class="modal-btns">
-      <button class="btn btn-cancel" onclick="closeModal('reminder-modal')">İptal</button>
-      <button class="btn btn-save" onclick="saveReminder()">Ayarla</button>
+    <h3>🔔 Hatırlatıcı</h3>
+    <div class="msub" id="rem-sub">Görev için hatırlatıcı ayarla</div>
+    <div class="mlabel">TARİH VE SAAT</div>
+    <input type="datetime-local" id="rem-dt">
+    <div class="mbtns">
+      <button class="mbtn mbtn-cancel" onclick="closeModal('rem-m')">İptal</button>
+      <button class="mbtn mbtn-save" onclick="saveReminder()">Ayarla</button>
     </div>
   </div>
 </div>
 
 <script>
-// ─── CONSTANTS ───────────────────────────────────────────────────────
-const COLORS = [
-  {l:"Mavi",v:"#4a7fa5"},{l:"Altın",v:"#c9a227"},{l:"Kırmızı",v:"#c0392b"},
+// ═══ CONSTANTS ══════════════════════════════════════════════════
+const COLORS=[{l:"Mavi",v:"#4a7fa5"},{l:"Altın",v:"#c9a227"},{l:"Kırmızı",v:"#c0392b"},
   {l:"Turuncu",v:"#e08030"},{l:"Mor",v:"#7b5ea7"},{l:"Yeşil",v:"#2e8b57"},
-  {l:"Pembe",v:"#c06080"},{l:"Lacivert",v:"#2c3e7a"}
-];
-const DEFAULT_SLOTS = [
-  ["07:00","08:10"],["08:15","09:15"],["12:30","13:30"],["17:45","18:20"],
+  {l:"Pembe",v:"#c06080"},{l:"Lacivert",v:"#2c3e7a"}];
+const DEF_SLOTS=[["07:00","08:10"],["08:15","09:15"],["12:30","13:30"],["17:45","18:20"],
   ["18:20","20:20"],["20:30","21:45"],["22:00","23:00"],["23:00","24:00"],
-  ["00:00","01:00"],["01:00","02:00"],["02:00","03:00"]
-];
-const ROUTINES = [
+  ["00:00","01:00"],["01:00","02:00"],["02:00","03:00"]];
+const DEF_RUTS=[
   {id:"r1",t:"İmajinasyon",f:"10 dk"},{id:"r2",t:"Düşünce görselleştirme",f:"10 dk"},
   {id:"r3",t:"Altın Oran Nefes Egzersizi",f:"3 günde 1"},{id:"r4",t:"Adım çalışması",f:"günlük"},
-  {id:"r5",t:"Ayna çalışması",f:"günlük"},{id:"r6",t:"Yeni kozmik sembol çalışması ve imajinasyonu",f:"günlük"},
+  {id:"r5",t:"Ayna çalışması",f:"günlük"},{id:"r6",t:"Yeni kozmik sembol çalışması",f:"günlük"},
   {id:"r7",t:"Renk meditasyonu, her gün yeni renk",f:"günlük"},{id:"r8",t:"Beyaz gürültü dinleme",f:"günlük"},
   {id:"r9",t:"Dokunma, his çalışması",f:"günlük"},{id:"r10",t:"Tat koku, his çalışması",f:"günlük"},
-  {id:"r11",t:"Gölge ve korkularla yüzleşme",f:""},{id:"r12",t:"Rüya, duyu değişimi, vizyon detaylı takip ve not alma",f:"günlük"},
-  {id:"r13",t:"Verilen araştırma konularına bakma",f:"günlük"}
-];
-const HOBI = ["KİL","ELMAS BOYAMA","RESİM","MÜZİK"];
-const YAZI = ["İÇERİK METNİ","AKIŞ","İMJ KİTAP"];
-const DIL  = ["İBRANİCE","RUSÇA","İNGİLİZCE"];
-const GEL  = ["VİBE CODİNG","ASTROLOJİ","CREATİVE DİRECTİNG"];
+  {id:"r11",t:"Gölge ve korkularla yüzleşme",f:""},{id:"r12",t:"Rüya, duyu değişimi, vizyon not alma",f:"günlük"},
+  {id:"r13",t:"Araştırma konularına bakma",f:"günlük"}];
+const DEF_SETTINGS={
+  slots:DEF_SLOTS.map(([s,e])=>({s,e})),
+  hobiler:["KİL","ELMAS BOYAMA","RESİM","MÜZİK"],
+  yazilar:["İÇERİK METNİ","AKIŞ","İMJ KİTAP"],
+  diller:["İBRANİCE","RUSÇA","İNGİLİZCE"],
+  gelisimler:["VİBE CODİNG","ASTROLOJİ","CREATİVE DİRECTİNG"],
+  routines:DEF_RUTS,theme:"light"
+};
 
-function uid() { return Math.random().toString(36).substr(2,8); }
-function dateKey(d){ return d.toISOString().split("T")[0]; }
-function fmtDate(k){ const [y,m,d]=k.split("-"); return `${d}.${m}.${y}`; }
+// ═══ STATE ══════════════════════════════════════════════════════
+let cur=dateKey(new Date()), today=dateKey(new Date());
+let plan,study,settings;
+let edSlotId=null,edTaskSlotId=null,edTaskId=null,edTodoId=null,remTodoId=null,selColor=COLORS[0].v;
+const timeouts={};
 
-// ─── STATE ────────────────────────────────────────────────────────────
-let currentDate = dateKey(new Date());
-const todayKey  = dateKey(new Date());
-let plan, study;
-let editingSlotId=null, editingTaskSlotId=null, editingTaskId=null, editingTodoId=null;
-let reminderTodoId=null, selColor=COLORS[0].v;
+// ═══ HELPERS ════════════════════════════════════════════════════
+function uid(){return Math.random().toString(36).substr(2,8);}
+function dateKey(d){return d.toISOString().split("T")[0];}
+function fmtDate(k){const[y,m,d]=k.split("-");return`${d}.${m}.${y}`;}
+function fmtDT(iso){const d=new Date(iso);return d.toLocaleDateString("tr-TR",{day:"2-digit",month:"2-digit"})+" "+d.toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"});}
+function strToId(s){let h=0;for(let i=0;i<s.length;i++){h=(h<<5)-h+s.charCodeAt(i);h|=0;}return Math.abs(h)%2000000;}
 
-// ─── STORAGE ──────────────────────────────────────────────────────────
-function loadPlan(k){
-  const r=localStorage.getItem("plan_"+k);
-  if(r) return JSON.parse(r);
-  return {date:k,slots:DEFAULT_SLOTS.map(([s,e])=>({id:uid(),s,e,tasks:[]})),todos:[]};
+// ═══ STORAGE ════════════════════════════════════════════════════
+function ldSettings(){try{const r=localStorage.getItem("app_settings");return r?{...DEF_SETTINGS,...JSON.parse(r)}:{...DEF_SETTINGS};}catch{return{...DEF_SETTINGS};}}
+function svSettings(s){localStorage.setItem("app_settings",JSON.stringify(s));}
+function ldPlan(k){try{const r=localStorage.getItem("plan_"+k);if(r)return JSON.parse(r);}catch{}
+  return{date:k,slots:settings.slots.map(({s,e})=>({id:uid(),s,e,tasks:[]})),todos:[]};}
+function svPlan(p){localStorage.setItem("plan_"+p.date,JSON.stringify(p));}
+function ldStudy(k){try{const r=localStorage.getItem("study_"+k);if(r)return JSON.parse(r);}catch{}
+  return{date:k,hobi:[],yazi:[],dil:[],gel:[],notes:"",routines:{}};}
+function svStudy(s){localStorage.setItem("study_"+s.date,JSON.stringify(s));}
+function ldAllStudies(){const out={};Object.keys(localStorage).filter(k=>k.startsWith("study_")).forEach(k=>{try{out[k.replace("study_","")]=JSON.parse(localStorage.getItem(k));}catch{}});return out;}
+
+// ═══ STREAK / 3GÜNDE1 ═══════════════════════════════════════════
+function getStreak(rid,curDate){
+  const all=ldAllStudies();let streak=0;
+  const base=new Date(curDate+"T00:00:00");
+  for(let i=1;i<=60;i++){
+    const d=new Date(base);d.setDate(d.getDate()-i);
+    const k=dateKey(d),st=all[k];
+    if(st&&st.routines[rid])streak++;else break;
+  }
+  return streak;
 }
-function savePlan(p){ localStorage.setItem("plan_"+p.date,JSON.stringify(p)); }
-function loadStudy(k){
-  const r=localStorage.getItem("study_"+k);
-  if(r) return JSON.parse(r);
-  return {date:k,hobi:[],yazi:[],dil:[],gel:[],notes:"",routines:{}};
-}
-function saveStudy(s){ localStorage.setItem("study_"+s.date,JSON.stringify(s)); }
-
-// ─── NOTIFICATIONS ────────────────────────────────────────────────────
-async function askNotifPermission(){
-  if(!("Notification" in window)) return false;
-  if(Notification.permission==="granted") return true;
-  const r = await Notification.requestPermission();
-  return r==="granted";
-}
-
-function strToNotifId(str){
-  let h=0;
-  for(let i=0;i<str.length;i++){h=(h<<5)-h+str.charCodeAt(i);h|=0;}
-  return Math.abs(h)%2000000;
-}
-
-// Store timeouts in memory so we can cancel them
-const scheduledTimeouts = {};
-
-function scheduleNotif(id, title, body, atMs){
-  const delay = atMs - Date.now();
-  if(delay<=0) return;
-  // Cancel existing
-  if(scheduledTimeouts[id]) clearTimeout(scheduledTimeouts[id]);
-  scheduledTimeouts[id] = setTimeout(()=>{
-    if(Notification.permission==="granted"){
-      new Notification(title,{body,icon:"/icon-192.png"});
-    } else {
-      showToast("🔔 "+title+": "+body);
-    }
-    delete scheduledTimeouts[id];
-    // Mark reminder as fired
-    const p = loadPlan(currentDate);
-    p.todos.forEach(t=>{ if(strToNotifId(t.id)===id) t.reminderFired=true; });
-    savePlan(p);
-  }, delay);
+function doneRecently(rid,days,curDate){
+  const all=ldAllStudies();const base=new Date(curDate+"T00:00:00");
+  for(let i=1;i<=days;i++){
+    const d=new Date(base);d.setDate(d.getDate()-i);
+    const k=dateKey(d),st=all[k];
+    if(st&&st.routines[rid])return true;
+  }
+  return false;
 }
 
-function cancelNotif(id){
-  if(scheduledTimeouts[id]){ clearTimeout(scheduledTimeouts[id]); delete scheduledTimeouts[id]; }
-}
+// ═══ NOTIFICATIONS ══════════════════════════════════════════════
+async function askNotif(){if(!("Notification"in window))return false;if(Notification.permission==="granted")return true;return(await Notification.requestPermission())==="granted";}
+function schedNotif(id,title,body,atMs){const delay=atMs-Date.now();if(delay<=0)return;if(timeouts[id])clearTimeout(timeouts[id]);timeouts[id]=setTimeout(()=>{if(Notification.permission==="granted")new Notification(title,{body,icon:"/icon-192.png"});else showToast("🔔 "+body);delete timeouts[id];},delay);}
+function cancelNotif(id){if(timeouts[id]){clearTimeout(timeouts[id]);delete timeouts[id];}}
+function rehydrate(){Object.keys(localStorage).filter(k=>k.startsWith("plan_")).forEach(k=>{try{const p=JSON.parse(localStorage.getItem(k));p.todos&&p.todos.forEach(t=>{if(t.reminder&&!t.rFired){const at=new Date(t.reminder).getTime();if(at>Date.now())schedNotif(strToId(t.id),"🔔 Hatırlatıcı",t.text,at);}});}catch{}});}
 
-function rehydrateReminders(){
-  // On page load, reschedule any pending reminders
-  const keys = Object.keys(localStorage).filter(k=>k.startsWith("plan_"));
-  keys.forEach(k=>{
-    const p = JSON.parse(localStorage.getItem(k));
-    if(!p.todos) return;
-    p.todos.forEach(t=>{
-      if(t.reminder && !t.reminderFired){
-        const at = new Date(t.reminder).getTime();
-        if(at > Date.now()){
-          scheduleNotif(strToNotifId(t.id), "Hatırlatıcı", t.text, at);
-        }
-      }
-    });
-  });
-}
+// ═══ TOAST ══════════════════════════════════════════════════════
+let tt;function showToast(m){const el=document.getElementById("toast");el.textContent=m;el.classList.add("show");clearTimeout(tt);tt=setTimeout(()=>el.classList.remove("show"),3200);}
 
-function fmtReminderDisplay(iso){
-  const d = new Date(iso);
-  return d.toLocaleDateString("tr-TR",{day:"2-digit",month:"2-digit"})+" "+
-         d.toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"});
+// ═══ DATE NAV ═══════════════════════════════════════════════════
+function renderDates(){
+  const d=fmtDate(cur),isToday=cur===today;
+  ["dn1","dn2","dn3"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=d;});
+  ["ds1","ds2","ds3"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=isToday?"Bugün":"Bugüne dön";});
 }
+function cd(delta){const d=new Date(cur+"T00:00:00");d.setDate(d.getDate()+delta);cur=dateKey(d);reload();}
+function goToday(){if(cur!==today){cur=today;reload();}}
+function reload(){plan=ldPlan(cur);study=ldStudy(cur);renderDates();renderTT();renderTodos();renderRoutines();renderCal();document.getElementById("notes-ta")&&(document.getElementById("notes-ta").value=study.notes||"");}
 
-// ─── TOAST ────────────────────────────────────────────────────────────
-let toastTimer;
-function showToast(msg){
-  const t=document.getElementById("toast");
-  t.textContent=msg; t.classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer=setTimeout(()=>t.classList.remove("show"),3500);
-}
-
-// ─── DATE ─────────────────────────────────────────────────────────────
-function renderDateUI(){
-  const d=fmtDate(currentDate);
-  document.getElementById("display-date").textContent=d;
-  document.getElementById("display-date2").textContent=d;
-  const isToday=currentDate===todayKey;
-  document.getElementById("date-sub").textContent  = isToday?"Bugün":"Bugüne dön";
-  document.getElementById("date-sub2").textContent = isToday?"Bugün":"Bugüne dön";
-}
-function changeDate(delta){
-  const d=new Date(currentDate+"T00:00:00"); d.setDate(d.getDate()+delta);
-  currentDate=dateKey(d);
-  plan=loadPlan(currentDate); study=loadStudy(currentDate);
-  renderDateUI(); renderTimeTable(); renderTodos(); renderCategories(); renderRoutines();
-  document.getElementById("notes-area").value=study.notes||"";
-}
-function goToday(){ if(currentDate!==todayKey){currentDate=todayKey;changeDate(0);} }
-
-// ─── TIME TABLE ───────────────────────────────────────────────────────
-function renderTimeTable(){
-  const tbl=document.getElementById("time-table"); tbl.innerHTML="";
+// ═══ TIME TABLE ══════════════════════════════════════════════════
+function renderTT(){
+  const tbl=document.getElementById("tt");tbl.innerHTML="";
   plan.slots.forEach(slot=>{
-    const row=document.createElement("div"); row.className="time-row";
-    const tc=document.createElement("div"); tc.className="time-cell";
-    tc.textContent=slot.s+"-"+slot.e; tc.onclick=()=>openEditSlot(slot.id);
-    const dc=document.createElement("div"); dc.className="tasks-cell";
-    if(!slot.tasks.length){
-      const h=document.createElement("span"); h.className="empty-hint"; h.textContent="Ekle..."; dc.appendChild(h);
-    } else {
-      slot.tasks.forEach(task=>{
-        const t=document.createElement("div"); t.className="task-tag";
-        t.innerHTML=`<span class="task-dot" style="background:${task.color}"></span><span class="task-label">${task.text}</span>`;
-        t.onclick=e=>{e.stopPropagation();openEditTask(slot.id,task.id);};
-        dc.appendChild(t);
-      });
-    }
-    dc.addEventListener("click",function(e){
-      if(e.target===dc||dc.querySelector(".empty-hint")===e.target) openAddTask(slot.id);
-    });
-    const xc=document.createElement("div"); xc.className="del-cell"; xc.innerHTML="×";
-    xc.onclick=()=>{plan.slots=plan.slots.filter(s=>s.id!==slot.id);savePlan(plan);renderTimeTable();};
-    row.append(tc,dc,xc); tbl.appendChild(row);
+    const row=document.createElement("div");row.className="time-row";
+    const tc=document.createElement("div");tc.className="tc";tc.textContent=slot.s+"-"+slot.e;tc.onclick=()=>openEditSlot(slot.id);
+    const dc=document.createElement("div");dc.className="dc";
+    if(!slot.tasks.length){const h=document.createElement("span");h.className="hint";h.textContent="Ekle...";dc.appendChild(h);}
+    else slot.tasks.forEach(task=>{const t=document.createElement("div");t.className="task-tag";t.innerHTML=`<span class="tdot" style="background:${task.color}"></span><span class="tlab">${task.text}</span>`;t.onclick=e=>{e.stopPropagation();openEditTask(slot.id,task.id);};dc.appendChild(t);});
+    dc.addEventListener("click",e=>{if(e.target===dc||dc.querySelector(".hint")===e.target)openAddTask(slot.id);});
+    const xc=document.createElement("div");xc.className="xc";xc.innerHTML="×";
+    xc.onclick=()=>{plan.slots=plan.slots.filter(s=>s.id!==slot.id);svPlan(plan);renderTT();};
+    row.append(tc,dc,xc);tbl.appendChild(row);
   });
 }
-function openEditSlot(id){
-  editingSlotId=id;
-  const s=plan.slots.find(s=>s.id===id);
-  document.getElementById("slot-start").value=s.s;
-  document.getElementById("slot-end").value=s.e;
-  openModal("slot-modal");
-}
-function saveSlot(){
-  const s=plan.slots.find(s=>s.id===editingSlotId);
-  s.s=document.getElementById("slot-start").value;
-  s.e=document.getElementById("slot-end").value;
-  savePlan(plan);renderTimeTable();closeModal("slot-modal");
-}
-function openAddSlot(){ openModal("addslot-modal"); }
-function confirmAddSlot(){
-  const s=document.getElementById("newslot-start").value;
-  const e=document.getElementById("newslot-end").value;
-  if(!s||!e) return;
-  plan.slots.push({id:uid(),s,e,tasks:[]});
-  savePlan(plan);renderTimeTable();closeModal("addslot-modal");
-  document.getElementById("newslot-start").value="";
-  document.getElementById("newslot-end").value="";
-}
-function openAddTask(slotId){
-  editingTaskSlotId=slotId;editingTaskId=null;
-  document.getElementById("task-modal-title").textContent="Görev Ekle";
-  document.getElementById("task-input").value="";
-  document.getElementById("task-del-btn").style.display="none";
-  selColor=COLORS[0].v; updateColorRow();
-  openModal("task-modal"); setTimeout(()=>document.getElementById("task-input").focus(),100);
-}
-function openEditTask(slotId,taskId){
-  editingTaskSlotId=slotId;editingTaskId=taskId;
-  const s=plan.slots.find(s=>s.id===slotId);
-  const t=s.tasks.find(t=>t.id===taskId);
-  document.getElementById("task-modal-title").textContent="Görevi Düzenle";
-  document.getElementById("task-input").value=t.text;
-  document.getElementById("task-del-btn").style.display="";
-  selColor=t.color; updateColorRow();
-  openModal("task-modal");
-}
-function saveTask(){
-  const txt=document.getElementById("task-input").value.trim(); if(!txt) return;
-  const s=plan.slots.find(s=>s.id===editingTaskSlotId);
-  if(editingTaskId){
-    const t=s.tasks.find(t=>t.id===editingTaskId); t.text=txt; t.color=selColor;
-  } else {
-    s.tasks.push({id:uid(),text:txt,color:selColor});
-  }
-  savePlan(plan);renderTimeTable();closeModal("task-modal");
-}
-function deleteTask(){
-  const s=plan.slots.find(s=>s.id===editingTaskSlotId);
-  s.tasks=s.tasks.filter(t=>t.id!==editingTaskId);
-  savePlan(plan);renderTimeTable();closeModal("task-modal");
-}
+function openEditSlot(id){edSlotId=id;const s=plan.slots.find(s=>s.id===id);document.getElementById("sm-s").value=s.s;document.getElementById("sm-e").value=s.e;openModal("slot-m");}
+function saveSlot(){const s=plan.slots.find(s=>s.id===edSlotId);s.s=document.getElementById("sm-s").value;s.e=document.getElementById("sm-e").value;svPlan(plan);renderTT();closeModal("slot-m");}
+function confirmAddSlot(){const s=document.getElementById("as-s").value,e=document.getElementById("as-e").value;if(!s||!e)return;plan.slots.push({id:uid(),s,e,tasks:[]});svPlan(plan);renderTT();closeModal("addslot-m");document.getElementById("as-s").value="";document.getElementById("as-e").value="";}
+function openAddTask(slotId){edTaskSlotId=slotId;edTaskId=null;document.getElementById("tm-title").textContent="Görev Ekle";document.getElementById("tm-inp").value="";document.getElementById("tm-del").style.display="none";selColor=COLORS[0].v;updCR();openModal("task-m");setTimeout(()=>document.getElementById("tm-inp").focus(),80);}
+function openEditTask(slotId,taskId){edTaskSlotId=slotId;edTaskId=taskId;const s=plan.slots.find(s=>s.id===slotId);const t=s.tasks.find(t=>t.id===taskId);document.getElementById("tm-title").textContent="Görevi Düzenle";document.getElementById("tm-inp").value=t.text;document.getElementById("tm-del").style.display="";selColor=t.color;updCR();openModal("task-m");}
+function saveTask(){const txt=document.getElementById("tm-inp").value.trim();if(!txt)return;const s=plan.slots.find(s=>s.id===edTaskSlotId);if(edTaskId){const t=s.tasks.find(t=>t.id===edTaskId);t.text=txt;t.color=selColor;}else s.tasks.push({id:uid(),text:txt,color:selColor});svPlan(plan);renderTT();closeModal("task-m");}
+function deleteTask(){const s=plan.slots.find(s=>s.id===edTaskSlotId);s.tasks=s.tasks.filter(t=>t.id!==edTaskId);svPlan(plan);renderTT();closeModal("task-m");}
 
-// ─── TODOS ────────────────────────────────────────────────────────────
+// ═══ TODOS ═══════════════════════════════════════════════════════
 function renderTodos(){
-  const list=document.getElementById("todo-list"); list.innerHTML="";
-  if(!plan.todos.length){
-    list.innerHTML='<p style="color:rgba(255,255,255,0.5);font-size:13px;text-align:center;padding:4px 0">Henüz görev yok</p>';
-    return;
-  }
+  const list=document.getElementById("tl");list.innerHTML="";
+  if(!plan.todos.length){list.innerHTML='<p style="color:rgba(255,255,255,.5);font-size:13px;text-align:center;padding:4px 0">Henüz görev yok</p>';return;}
   plan.todos.forEach(todo=>{
-    const wrap=document.createElement("div"); wrap.className="todo-item-wrap";
-
-    // main row
-    const row=document.createElement("div"); row.className="todo-item";
-
-    // checkbox
-    const chk=document.createElement("div");
-    chk.className="todo-check"+(todo.completed?" done":"");
-    chk.onclick=()=>{todo.completed=!todo.completed;savePlan(plan);renderTodos();};
-
-    // text
-    const txt=document.createElement("div");
-    txt.className="todo-text"+(todo.completed?" done":"");
-    txt.textContent=todo.text;
-    txt.onclick=()=>openTodoEdit(todo.id,todo.text);
-
-    // bell button
-    const bell=document.createElement("button");
-    bell.className="bell-btn "+(todo.reminder&&!todo.reminderFired?"on":"off");
-    bell.title=todo.reminder?"Hatırlatıcıyı kaldır":"Hatırlatıcı ekle";
-    bell.innerHTML=`<svg viewBox="0 0 24 24" fill="${todo.reminder&&!todo.reminderFired?'currentColor':'none'}" stroke="currentColor" stroke-width="2.2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`;
-    bell.onclick=()=>{
-      if(todo.reminder&&!todo.reminderFired){ removeReminder(todo.id); }
-      else { openReminderModal(todo.id, todo.text); }
-    };
-
-    // delete
-    const del=document.createElement("button"); del.className="todo-del"; del.textContent="×";
-    del.onclick=()=>{
-      cancelNotif(strToNotifId(todo.id));
-      plan.todos=plan.todos.filter(t=>t.id!==todo.id);
-      savePlan(plan);renderTodos();
-    };
-
-    row.append(chk,txt,bell,del); wrap.appendChild(row);
-
-    // reminder badge
-    if(todo.reminder&&!todo.reminderFired){
-      const badge=document.createElement("div"); badge.className="reminder-badge";
-      badge.innerHTML=`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>${fmtReminderDisplay(todo.reminder)}`;
-      wrap.appendChild(badge);
-    }
-
+    const wrap=document.createElement("div");wrap.className="todo-wrap";
+    const row=document.createElement("div");row.className="todo-row";
+    const chk=document.createElement("div");chk.className="tcheck"+(todo.completed?" done":"");chk.onclick=()=>{todo.completed=!todo.completed;svPlan(plan);renderTodos();};
+    const txt=document.createElement("div");txt.className="ttxt"+(todo.completed?" done":"");txt.textContent=todo.text;txt.onclick=()=>openTodoEdit(todo.id,todo.text);
+    const bell=document.createElement("button");bell.className="bell "+(todo.reminder&&!todo.rFired?"on":"off");
+    bell.innerHTML=`<svg viewBox="0 0 24 24" fill="${todo.reminder&&!todo.rFired?'currentColor':'none'}" stroke="currentColor" stroke-width="2.2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`;
+    bell.style.color=todo.reminder&&!todo.rFired?"#713f12":"white";
+    bell.onclick=()=>{if(todo.reminder&&!todo.rFired)rmReminder(todo.id);else openRem(todo.id,todo.text);};
+    const del=document.createElement("button");del.className="tdel";del.textContent="×";del.onclick=()=>{cancelNotif(strToId(todo.id));plan.todos=plan.todos.filter(t=>t.id!==todo.id);svPlan(plan);renderTodos();};
+    row.append(chk,txt,bell,del);wrap.appendChild(row);
+    if(todo.reminder&&!todo.rFired){const b=document.createElement("div");b.className="rembadge";b.innerHTML=`🔔 ${fmtDT(todo.reminder)}`;wrap.appendChild(b);}
     list.appendChild(wrap);
   });
 }
+function addTodo(){const inp=document.getElementById("ti");const txt=inp.value.trim();if(!txt)return;plan.todos.push({id:uid(),text:txt,completed:false});svPlan(plan);renderTodos();inp.value="";}
+function openTodoEdit(id,text){edTodoId=id;document.getElementById("te-inp").value=text;openModal("todo-edit-m");setTimeout(()=>document.getElementById("te-inp").focus(),80);}
+function saveTodoEdit(){const txt=document.getElementById("te-inp").value.trim();if(!txt)return;plan.todos=plan.todos.map(t=>t.id===edTodoId?{...t,text:txt}:t);svPlan(plan);renderTodos();closeModal("todo-edit-m");}
+function openRem(id,text){remTodoId=id;document.getElementById("rem-sub").textContent='"'+text+'" için hatırlatıcı';const n=new Date();n.setMinutes(n.getMinutes()+30);document.getElementById("rem-dt").value=n.toISOString().slice(0,16);openModal("rem-m");}
+async function saveReminder(){const v=document.getElementById("rem-dt").value;if(!v)return;const at=new Date(v);if(at<=new Date()){showToast("⚠️ Geçmiş saat seçildi!");return;}const granted=await askNotif();const todo=plan.todos.find(t=>t.id===remTodoId);plan.todos=plan.todos.map(t=>t.id===remTodoId?{...t,reminder:at.toISOString(),rFired:false}:t);svPlan(plan);schedNotif(strToId(remTodoId),"🔔 Hatırlatıcı",todo.text,at.getTime());renderTodos();closeModal("rem-m");showToast(granted?"✅ Hatırlatıcı ayarlandı: "+fmtDT(at.toISOString()):"⚠️ Bildirim izni yok, sayfa açık kalırsa hatırlatır.");}
+function rmReminder(id){cancelNotif(strToId(id));plan.todos=plan.todos.map(t=>t.id===id?{...t,reminder:undefined,rFired:false}:t);svPlan(plan);renderTodos();showToast("🔕 Hatırlatıcı kaldırıldı");}
 
-function addTodo(){
-  const inp=document.getElementById("todo-input");
-  const txt=inp.value.trim(); if(!txt) return;
-  plan.todos.push({id:uid(),text:txt,completed:false});
-  savePlan(plan);renderTodos();inp.value="";
-}
-
-function openTodoEdit(id,text){
-  editingTodoId=id;
-  document.getElementById("todo-edit-input").value=text;
-  openModal("todo-edit-modal");
-  setTimeout(()=>document.getElementById("todo-edit-input").focus(),100);
-}
-function saveTodoEdit(){
-  const txt=document.getElementById("todo-edit-input").value.trim(); if(!txt) return;
-  plan.todos=plan.todos.map(t=>t.id===editingTodoId?{...t,text:txt}:t);
-  savePlan(plan);renderTodos();closeModal("todo-edit-modal");
-}
-
-function openReminderModal(todoId, todoText){
-  reminderTodoId=todoId;
-  document.getElementById("reminder-modal-sub").textContent='"'+todoText+'" için hatırlatıcı';
-  const now=new Date(); now.setMinutes(now.getMinutes()+30);
-  document.getElementById("reminder-dt").value=now.toISOString().slice(0,16);
-  openModal("reminder-modal");
-}
-async function saveReminder(){
-  const dtVal=document.getElementById("reminder-dt").value;
-  if(!dtVal){closeModal("reminder-modal");return;}
-  const at=new Date(dtVal);
-  if(at<=new Date()){showToast("⚠️ Geçmiş bir saat seçildi!");return;}
-
-  const granted=await askNotifPermission();
-  const todo=plan.todos.find(t=>t.id===reminderTodoId);
-
-  plan.todos=plan.todos.map(t=>t.id===reminderTodoId?{...t,reminder:at.toISOString(),reminderFired:false}:t);
-  savePlan(plan);
-
-  scheduleNotif(strToNotifId(reminderTodoId),"🔔 Hatırlatıcı",todo.text,at.getTime());
-
-  renderTodos();closeModal("reminder-modal");
-
-  if(granted){
-    showToast("✅ Hatırlatıcı ayarlandı: "+fmtReminderDisplay(at.toISOString()));
-  } else {
-    showToast("⚠️ Bildirim izni yok. Sayfa açık kalırsa yine de hatırlatır.");
-  }
-}
-function removeReminder(todoId){
-  cancelNotif(strToNotifId(todoId));
-  plan.todos=plan.todos.map(t=>t.id===todoId?{...t,reminder:undefined,reminderFired:false}:t);
-  savePlan(plan);renderTodos();
-  showToast("🔕 Hatırlatıcı kaldırıldı");
-}
-
-// ─── CATEGORIES ───────────────────────────────────────────────────────
-function renderCat(cid,opts,sel,max,field){
-  const c=document.getElementById(cid); c.innerHTML="";
-  opts.forEach(opt=>{
-    const b=document.createElement("button"); b.className="cat-opt"+(sel.includes(opt)?" selected":"");
-    b.textContent=opt;
-    b.onclick=()=>{
-      if(sel.includes(opt)){ study[field]=sel.filter(o=>o!==opt); }
-      else { study[field]=max&&sel.length>=max?[...sel.slice(1),opt]:[...sel,opt]; }
-      saveStudy(study);renderCategories();
-    };
-    c.appendChild(b);
-  });
-}
-function renderCategories(){
-  renderCat("cat-hobi",HOBI,study.hobi,2,"hobi");
-  renderCat("cat-yazi",YAZI,study.yazi,0,"yazi");
-  renderCat("cat-dil",DIL,study.dil,1,"dil");
-  renderCat("cat-gelisim",GEL,study.gel,0,"gel");
-}
-
-// ─── ROUTINES ─────────────────────────────────────────────────────────
+// ═══ ROUTINES ════════════════════════════════════════════════════
 function renderRoutines(){
-  const list=document.getElementById("routines-list"); list.innerHTML="";
-  let done=0;
-  ROUTINES.forEach((r,i)=>{
-    const checked=!!study.routines[r.id]; if(checked) done++;
-    const row=document.createElement("div"); row.className="routine-item";
-    const chk=document.createElement("div"); chk.className="routine-check"+(checked?" done":"");
-    const txt=document.createElement("div"); txt.className="routine-text"+(checked?" done":"");
-    txt.innerHTML=`<span class="routine-num">${i+1}. </span>${r.t}${r.f?`<span class="routine-freq">${r.f}</span>`:""}`;
-    row.append(chk,txt);
-    row.onclick=()=>{study.routines[r.id]=!study.routines[r.id];saveStudy(study);renderRoutines();};
-    list.appendChild(row);
+  const ruts=settings.routines;
+  const done=ruts.filter(r=>study.routines[r.id]).length;
+  const tot=ruts.length;
+  document.getElementById("rut-count").textContent=done+"/"+tot;
+  document.getElementById("prog-label").textContent=done+" / "+tot+" tamamlandı";
+  document.getElementById("prog-fill").style.width=(tot?done/tot*100:0)+"%";
+  const list=document.getElementById("rl");list.innerHTML="";
+  ruts.forEach((r,i)=>{
+    const checked=!!study.routines[r.id];
+    const is3g=r.f==="3 günde 1";
+    const recent=is3g?doneRecently(r.id,3,cur):false;
+    const streak=getStreak(r.id,cur);
+    const wrap=document.createElement("div");wrap.className="ritem";
+    if(recent&&!checked){const msg=document.createElement("div");msg.className="done3-msg";msg.textContent="✓ Son 3 günde yapıldı";wrap.appendChild(msg);}
+    const row=document.createElement("div");row.className="ritem-row"+(recent&&!checked?" dimmed":"");
+    const chk=document.createElement("div");chk.className="rcheck"+(checked?" done":"");
+    const tw=document.createElement("div");tw.className="rtext-wrap";
+    const rt=document.createElement("div");rt.className="rtext"+(checked?" done":"");rt.textContent=`${i+1}. ${r.t}`;
+    if(r.f){const rf=document.createElement("div");rf.className="rfreq";rf.textContent=r.f;tw.appendChild(rt);tw.appendChild(rf);}else tw.appendChild(rt);
+    row.append(chk,tw);
+    if(streak>1){const sb=document.createElement("span");sb.className="streak-badge";sb.textContent="🔥 "+streak;row.appendChild(sb);}
+    if(!recent||checked)row.onclick=()=>{study.routines[r.id]=!study.routines[r.id];svStudy(study);renderRoutines();};
+    wrap.appendChild(row);list.appendChild(wrap);
   });
-  document.getElementById("routine-badge").textContent=done+"/"+ROUTINES.length;
 }
 
-// ─── NOTES ────────────────────────────────────────────────────────────
-function saveNotes(){ study.notes=document.getElementById("notes-area").value; saveStudy(study); }
+// ═══ ÇALIŞMALAR ══════════════════════════════════════════════════
+function renderCal(){
+  const c=document.getElementById("cal-content");c.innerHTML="";
+  const cats=[
+    {label:"HOBİ",opts:settings.hobiler,field:"hobi",max:2},
+    {label:"YAZI",opts:settings.yazilar,field:"yazi",max:0},
+    {label:"YABANCI DİL",opts:settings.diller,field:"dil",max:1},
+    {label:"GELİŞİM",opts:settings.gelisimler,field:"gel",max:0}
+  ];
+  cats.forEach(({label,opts,field,max})=>{
+    const card=document.createElement("div");card.className="cat-card";
+    const lbl=document.createElement("div");lbl.className="cat-label";lbl.textContent=label+(max?` (en fazla ${max})`:"");
+    const ow=document.createElement("div");ow.className="cat-opts";
+    opts.forEach(opt=>{
+      const b=document.createElement("button");b.className="copt"+(study[field].includes(opt)?" sel":"");b.textContent=opt;
+      b.onclick=()=>{
+        const sel=study[field];
+        if(sel.includes(opt)){study[field]=sel.filter(o=>o!==opt);}
+        else{study[field]=max&&sel.length>=max?[...sel.slice(1),opt]:[...sel,opt];}
+        svStudy(study);renderCal();
+        setTimeout(()=>document.getElementById("notes-ta")&&(document.getElementById("notes-ta").value=study.notes||""),0);
+      };
+      ow.appendChild(b);
+    });
+    card.append(lbl,ow);c.appendChild(card);
+  });
+  const nc=document.createElement("div");nc.className="notes-card";
+  nc.innerHTML=`<div class="notes-title">DÜŞÜNCE / NOT GÜNLÜĞÜ</div><textarea id="notes-ta" placeholder="Düşüncelerini yaz..." rows="6"></textarea>`;
+  nc.querySelector("textarea").value=study.notes||"";
+  nc.querySelector("textarea").oninput=e=>{study.notes=e.target.value;svStudy(study);};
+  c.appendChild(nc);
+}
 
-// ─── COLOR ────────────────────────────────────────────────────────────
-function buildColorRow(){
-  const row=document.getElementById("color-row");
+// ═══ AYARLAR ═════════════════════════════════════════════════════
+function renderSettings(){
+  renderSetSlots();renderSetCats();renderSetRuts();
+  document.getElementById("tbtn-light").classList.toggle("active",settings.theme==="light");
+  document.getElementById("tbtn-dark").classList.toggle("active",settings.theme==="dark");
+}
+function setTheme(t){settings.theme=t;svSettings(settings);document.documentElement.setAttribute("data-theme",t);renderSettings();}
+function renderSetSlots(){
+  const c=document.getElementById("set-slots");c.innerHTML="";
+  settings.slots.forEach((sl,i)=>{
+    const row=document.createElement("div");row.className="set-item";
+    const lbl=document.createElement("span");lbl.className="set-item-label";lbl.textContent=sl.s+" – "+sl.e;
+    const del=document.createElement("button");del.className="del-btn";del.textContent="×";
+    del.onclick=()=>{settings.slots.splice(i,1);svSettings(settings);renderSetSlots();};
+    row.append(lbl,del);c.appendChild(row);
+  });
+}
+function addSettingSlot(){const s=document.getElementById("ns-start").value,e=document.getElementById("ns-end").value;if(!s||!e)return;settings.slots.push({s,e});svSettings(settings);renderSetSlots();document.getElementById("ns-start").value="";document.getElementById("ns-end").value="";}
+function renderSetCats(){
+  const c=document.getElementById("set-cats");c.innerHTML="";
+  const cats=[{label:"HOBİ",field:"hobiler"},{label:"YAZI",field:"yazilar"},{label:"DİL",field:"diller"},{label:"GELİŞİM",field:"gelisimler"}];
+  cats.forEach(({label,field})=>{
+    const sec=document.createElement("div");sec.style.cssText="margin-bottom:12px";
+    const lbl=document.createElement("div");lbl.style.cssText="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px;letter-spacing:.1em";lbl.textContent=label;
+    const list=document.createElement("div");list.className="set-list";
+    settings[field].forEach((item,i)=>{
+      const row=document.createElement("div");row.className="set-item";
+      const t=document.createElement("span");t.className="set-item-label";t.textContent=item;
+      const del=document.createElement("button");del.className="del-btn";del.textContent="×";
+      del.onclick=()=>{settings[field].splice(i,1);svSettings(settings);renderSetCats();};
+      row.append(t,del);list.appendChild(row);
+    });
+    const ar=document.createElement("div");ar.className="add-row";ar.style.marginTop="8px";
+    const inp=document.createElement("input");inp.type="text";inp.placeholder="Yeni ekle...";
+    const btn=document.createElement("button");btn.textContent="Ekle";
+    btn.onclick=()=>{const v=inp.value.trim();if(!v)return;settings[field].push(v);svSettings(settings);renderSetCats();inp.value="";};
+    ar.append(inp,btn);sec.append(lbl,list,ar);c.appendChild(sec);
+  });
+}
+function renderSetRuts(){
+  const c=document.getElementById("set-ruts");c.innerHTML="";
+  settings.routines.forEach((r,i)=>{
+    const row=document.createElement("div");row.className="set-item";
+    const lbl=document.createElement("div");lbl.style.flex="1";
+    const t=document.createElement("div");t.className="set-item-label";t.textContent=r.t;
+    const f=document.createElement("div");f.className="set-item-sub";f.textContent=r.f||"";
+    lbl.append(t,f);
+    const del=document.createElement("button");del.className="del-btn";del.textContent="×";
+    del.onclick=()=>{settings.routines.splice(i,1);svSettings(settings);renderSetRuts();renderRoutines();};
+    row.append(lbl,del);c.appendChild(row);
+  });
+}
+function addSettingRoutine(){
+  const t=document.getElementById("nr-text").value.trim(),f=document.getElementById("nr-freq").value.trim();
+  if(!t)return;settings.routines.push({id:uid(),t,f});svSettings(settings);renderSetRuts();renderRoutines();
+  document.getElementById("nr-text").value="";document.getElementById("nr-freq").value="";
+}
+
+// ═══ COLOR PICKER ════════════════════════════════════════════════
+function buildCR(){
+  const row=document.getElementById("cr");
   COLORS.forEach(c=>{
-    const b=document.createElement("div"); b.className="color-swatch";
-    b.style.background=c.v; b.dataset.color=c.v;
-    b.onclick=()=>{selColor=c.v;updateColorRow();};
-    row.appendChild(b);
+    const b=document.createElement("div");b.className="cswatch";b.style.background=c.v;b.dataset.c=c.v;
+    b.style.boxShadow=c.v===selColor?`0 0 0 3px var(--surface),0 0 0 5px ${c.v}`:"none";
+    b.onclick=()=>{selColor=c.v;updCR();};row.appendChild(b);
   });
 }
-function updateColorRow(){
-  document.querySelectorAll(".color-swatch").forEach(b=>{
-    const on=b.dataset.color===selColor;
-    b.classList.toggle("selected",on);
-    b.style.boxShadow=on?`0 0 0 3px white, 0 0 0 5px ${b.dataset.color}`:"none";
-  });
-}
+function updCR(){document.querySelectorAll(".cswatch").forEach(b=>{const on=b.dataset.c===selColor;b.classList.toggle("sel",on);b.style.boxShadow=on?`0 0 0 3px var(--surface),0 0 0 5px ${b.dataset.c}`:"none";});}
 
-// ─── TABS ─────────────────────────────────────────────────────────────
+// ═══ TABS ════════════════════════════════════════════════════════
 function switchTab(tab){
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
-  document.querySelectorAll(".nav-tab").forEach(t=>t.classList.remove("active"));
+  document.querySelectorAll(".ntab").forEach(t=>t.classList.remove("active"));
   document.getElementById("page-"+tab).classList.add("active");
-  document.getElementById("tab-"+tab).classList.add("active");
+  document.getElementById("ntab-"+tab).classList.add("active");
   window.scrollTo(0,0);
+  if(tab==="set")renderSettings();
 }
 
-// ─── MODALS ───────────────────────────────────────────────────────────
+// ═══ MODALS ══════════════════════════════════════════════════════
 function openModal(id){
-  const el=document.getElementById(id); el.classList.add("open");
-  el.addEventListener("click",function bg(e){ if(e.target===el){closeModal(id);el.removeEventListener("click",bg);} });
+  const el=document.getElementById(id);el.classList.add("open");
+  const close=e=>{if(e.target===el){closeModal(id);el.removeEventListener("click",close);}};
+  el.addEventListener("click",close);
 }
-function closeModal(id){ document.getElementById(id).classList.remove("open"); }
+function closeModal(id){document.getElementById(id).classList.remove("open");}
 
-// ─── INIT ─────────────────────────────────────────────────────────────
+// ═══ INIT ════════════════════════════════════════════════════════
 function init(){
-  plan=loadPlan(currentDate); study=loadStudy(currentDate);
-  renderDateUI(); renderTimeTable(); renderTodos();
-  renderCategories(); renderRoutines();
-  document.getElementById("notes-area").value=study.notes||"";
-  buildColorRow();
-  rehydrateReminders();
+  settings=ldSettings();
+  document.documentElement.setAttribute("data-theme",settings.theme);
+  plan=ldPlan(cur);study=ldStudy(cur);
+  renderDates();renderTT();renderTodos();renderRoutines();renderCal();
+  buildCR();rehydrate();
 }
-
 init();
 </script>
 </body>
